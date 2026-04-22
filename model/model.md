@@ -22,3 +22,8 @@ Four design choices from the paper are worth pausing on:
 Below is a matrix-shape view of the factorization.
 
 ![](../assets/factorization.png)
+
+
+```python
+print('Hello world')
+```
