@@ -96,3 +96,24 @@ tokenizer.pad_token = tokenizer.eos_token
 tok = tokenizer(entries, padding=True, truncation=True, return_tensors="pt")
 print(tok["input_ids"].shape)  
 ```
+
+```python
+model = GPT2LMHeadModel.from_pretrained("gpt2")
+model.requires_grad_(False)  
+
+for head in model.transformer.h[-3:]:
+    orig_c_attn = head.attn.c_attn
+    orig_c_proj = head.attn.c_proj
+
+    head.attn.c_attn = LoraLayer(orig_c_attn.weight.shape[0], orig_c_attn.weight.shape[1], r=4, alpha=1.0)
+    head.attn.c_proj = LoraLayer(orig_c_proj.weight.shape[0], orig_c_proj.weight.shape[1], r=4, alpha=1.0)
+
+    head.attn.c_attn.weight.data.copy_(orig_c_attn.weight.t())
+    head.attn.c_proj.weight.data.copy_(orig_c_proj.weight.t())
+    head.attn.c_attn.bias.data.copy_(orig_c_attn.bias)
+    head.attn.c_proj.bias.data.copy_(orig_c_proj.bias)
+
+trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+total     = sum(p.numel() for p in model.parameters())
+print(f"Trainable: {trainable:,} / {total:,} ({100*trainable/total:.2f}%)")
+```
